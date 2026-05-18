@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Discord Remote</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- LOGIN -->
+  <div id="login-screen" class="login-screen">
+    <div class="login-box">
+      <div class="login-top-row">
+        <button id="theme-toggle-login" class="icon-btn theme-btn" title="Toggle light/dark mode">☀️</button>
+      </div>
+      <div class="login-logo">
+        <svg width="44" height="44" viewBox="0 0 71 55" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M60.1 4.9A58.6 58.6 0 0 0 45.6.7a40.7 40.7 0 0 0-1.8 3.7 54.2 54.2 0 0 0-16.3 0A39.4 39.4 0 0 0 25.7.7 58.4 58.4 0 0 0 11.2 5C1.6 19.4-1 33.4.3 47.3a59 59 0 0 0 18 9.1 44.6 44.6 0 0 0 3.9-6.3 38.4 38.4 0 0 1-6.1-2.9l1.5-1.1a42.2 42.2 0 0 0 36 0l1.5 1.1a38.3 38.3 0 0 1-6.1 3 44.3 44.3 0 0 0 3.8 6.2 58.7 58.7 0 0 0 18-9c1.6-16.4-2.7-30.3-11.7-42.4zM23.7 38.8c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2c3.5 0 6.4 3.2 6.3 7.2 0 4-2.8 7.2-6.3 7.2zm23.5 0c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2c3.5 0 6.4 3.2 6.3 7.2 0 4-2.8 7.2-6.3 7.2z" fill="#5865F2"/>
+        </svg>
+      </div>
+      <h1>Discord Remote</h1>
+      <p class="login-subtitle">Connect with your Discord account token</p>
+
+      <div class="token-help">
+        <details id="pc-help">
+          <summary>How to get your token — PC</summary>
+          <ol>
+            <li>Open Discord in your browser or desktop app</li>
+            <li>Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd></li>
+            <li>Click the <strong>Console</strong> tab</li>
+            <li>Paste the code below and press <kbd>Enter</kbd></li>
+          </ol>
+          <pre class="token-code">window.webpackChunkdiscord_app.push([[Symbol()],{},req=>{if(!req.c)return;for(let m of Object.values(req.c)){try{if(!m.exports||m.exports===window)continue;if(m.exports?.getToken)return copy(m.exports.getToken());for(let ex in m.exports){if(m.exports?.[ex]?.getToken&&m.exports[ex][Symbol.toStringTag]!=='IntlMessagesProxy')return copy(m.exports[ex].getToken());}}catch{}}}]);window.webpackChunkdiscord_app.pop();</pre>
+          <p>Your token is now in your clipboard — paste it above.</p>
+        </details>
+        <details id="mobile-help">
+          <summary>How to get your token — Mobile</summary>
+          <div class="mobile-token-steps">
+            <div class="token-method">
+              <strong>Option 1 — Kiwi Browser (Android, easiest)</strong>
+              <ol>
+                <li>Install <strong>Kiwi Browser</strong> from the Play Store</li>
+                <li>Go to <strong>discord.com</strong> and log in</li>
+                <li>Tap the menu → <strong>Developer Tools</strong> → Console</li>
+                <li>Paste the code above and tap Enter</li>
+              </ol>
+            </div>
+            <div class="token-method">
+              <strong>Option 2 — iPhone / iOS</strong>
+              <ol>
+                <li>Connect iPhone to Mac, open Safari → Develop → your iPhone</li>
+                <li>Open discord.com and use the Safari console</li>
+              </ol>
+            </div>
+            <div class="token-method">
+              <strong>Option 3 — Any phone</strong>
+              <ol>
+                <li>Get the token once on a PC, save it in your phone notes</li>
+              </ol>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <div class="login-field">
+        <div class="input-group">
+          <input type="password" id="token-input" placeholder="Discord token..." autocomplete="off" />
+          <button id="show-token-btn" class="icon-btn" title="Show/hide">👁</button>
+        </div>
+        <label class="save-checkbox">
+          <input type="checkbox" id="save-token-cb" />
+          <span>Remember token in this browser</span>
+        </label>
+      </div>
+
+      <div class="login-field">
+        <div class="input-group">
+          <input type="password" id="password-input" placeholder="Account password (for username changes)..." autocomplete="off" />
+          <button id="show-password-btn" class="icon-btn" title="Show/hide">👁</button>
+        </div>
+        <label class="save-checkbox">
+          <input type="checkbox" id="save-password-cb" />
+          <span>Remember password in this browser</span>
+        </label>
+      </div>
+
+      <button id="login-btn" class="btn-primary">Connect</button>
+      <div id="login-error" class="error-msg hidden"></div>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="app" class="app hidden">
+
+    <!-- Sidebar: servers list -->
+    <div class="sidebar" id="guild-sidebar">
+      <div class="sidebar-header">
+        <img id="user-avatar" src="" alt="avatar" class="user-avatar" />
+        <div class="user-info">
+          <span id="user-tag" class="user-tag"></span>
+        </div>
+        <button id="theme-toggle-app" class="icon-btn theme-btn" title="Toggle light/dark">☀️</button>
+        <button id="settings-btn" class="icon-btn" title="Settings">⚙</button>
+        <button id="logout-btn" class="icon-btn" title="Disconnect">✕</button>
+      </div>
+
+      <div class="sidebar-section dm-section">
+        <div class="section-label">Direct Messages</div>
+        <div id="dm-btn" class="guild-item dm-item" data-type="dms">
+          <div class="guild-icon dm-icon">💬</div>
+          <span>Direct Messages</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section guild-section">
+        <div class="section-label">Servers</div>
+        <div id="guild-list" class="guild-list">
+          <div class="loading">Loading servers...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Channel sidebar -->
+    <div class="channel-sidebar" id="channel-sidebar">
+      <div class="channel-sidebar-header">
+        <button class="back-btn mobile-only" id="back-to-servers">← Back</button>
+        <span id="channel-sidebar-title">Channels</span>
+      </div>
+      <div id="channel-list" class="channel-list">
+        <div class="placeholder-text">Select a server</div>
+      </div>
+    </div>
+
+    <!-- Main content area -->
+    <div class="main-content">
+      <div class="messages-header">
+        <button class="back-btn mobile-only" id="back-to-channels">← Back</button>
+        <span id="active-channel-name">Select a channel</span>
+        <button id="refresh-btn" class="icon-btn" title="Refresh">↺</button>
+      </div>
+
+      <!-- Text channel view -->
+      <div id="messages-area" class="messages-area">
+        <div class="placeholder-text center">Select a channel or DM to start</div>
+      </div>
+      <div class="message-input-area" id="text-input-area">
+        <textarea id="message-input" placeholder="Select a channel first..." rows="1" disabled></textarea>
+        <button id="send-btn" class="btn-send" disabled>Send</button>
+      </div>
+
+      <!-- Voice channel view -->
+      <div id="voice-panel" class="voice-panel hidden">
+        <div class="voice-card">
+          <div class="voice-card-icon">🔊</div>
+          <div id="voice-card-name" class="voice-card-name"></div>
+
+          <!-- Not joined state -->
+          <div id="voice-not-joined">
+            <p class="voice-hint">You are not connected to this voice channel</p>
+            <button id="voice-join-btn" class="btn-voice join">Join Voice Channel</button>
+          </div>
+
+          <!-- Joined state -->
+          <div id="voice-joined" class="hidden">
+            <div class="voice-badge">🟢 Connected</div>
+
+            <div class="voice-upload-zone" id="voice-upload-zone">
+              <input type="file" id="voice-file-input" accept=".mp3,.mp4,.wav" class="hidden" />
+              <label for="voice-file-input" class="voice-upload-label">
+                <div class="voice-upload-icon">🎵</div>
+                <div class="voice-upload-text">Choose audio file</div>
+                <div class="voice-upload-sub">MP3, MP4 or WAV · Max 50 MB</div>
+              </label>
+            </div>
+
+            <div id="voice-file-row" class="voice-file-row hidden">
+              <span class="voice-file-icon">🎵</span>
+              <span id="voice-file-label" class="voice-file-label"></span>
+              <button id="voice-clear-file" class="icon-btn">✕</button>
+            </div>
+
+            <div class="voice-controls-row">
+              <button id="voice-play-btn" class="btn-voice play" disabled>▶ Play</button>
+              <button id="voice-stop-btn" class="btn-voice stop hidden">■ Stop</button>
+            </div>
+
+            <div id="voice-status-msg" class="status-msg hidden"></div>
+
+            <button id="voice-leave-btn" class="btn-voice leave">Disconnect</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile bottom nav -->
+    <nav class="mobile-bottom-nav mobile-only">
+      <button class="nav-tab active" id="nav-servers">
+        <span class="nav-icon">🖥</span>
+        <span class="nav-label">Servers</span>
+      </button>
+      <button class="nav-tab" id="nav-dms">
+        <span class="nav-icon">💬</span>
+        <span class="nav-label">DMs</span>
+      </button>
+      <button class="nav-tab" id="nav-settings-mobile">
+        <span class="nav-icon">⚙</span>
+        <span class="nav-label">Settings</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div id="settings-modal" class="modal hidden">
+    <div class="modal-backdrop" id="settings-backdrop"></div>
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2>Account Settings</h2>
+        <button class="icon-btn" id="close-settings">✕</button>
+      </div>
+
+      <div class="settings-section">
+        <h3>Presets</h3>
+        <p class="section-note">A preset saves a username + avatar. Applying one switches your account instantly.</p>
+        <div class="preset-save-row">
+          <input type="text" id="preset-name-input" placeholder="Preset name (e.g. Gaming, Work)..." />
+          <button id="save-preset-btn" class="btn-primary small">Save current</button>
+        </div>
+        <div id="preset-msg" class="status-msg hidden"></div>
+        <div id="preset-list" class="preset-list">
+          <div class="no-presets">No presets saved yet.</div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>Profile Picture</h3>
+        <div class="avatar-preview-row">
+          <img id="settings-avatar" src="" alt="avatar" class="settings-avatar" />
+          <div class="avatar-input-col">
+            <input type="text" id="avatar-url-input" placeholder="Paste a cdn.discordapp.com URL..." />
+            <button id="change-avatar-btn" class="btn-primary small">Update Avatar</button>
+          </div>
+        </div>
+        <div id="avatar-msg" class="status-msg hidden"></div>
+      </div>
+
+      <div class="settings-section">
+        <h3>Username</h3>
+        <input type="text" id="new-username-input" placeholder="New username..." />
+        <div id="password-hint" class="password-hint hidden">Password is saved from login.</div>
+        <input type="password" id="account-password-input" placeholder="Account password (required by Discord)..." />
+        <button id="change-username-btn" class="btn-primary small">Update Username</button>
+        <div id="username-msg" class="status-msg hidden"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
