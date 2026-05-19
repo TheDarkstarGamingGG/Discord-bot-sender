@@ -28,6 +28,45 @@ let voiceState = {
   lastTempFile: null,
 };
 
+// --- Anti-detection helpers ---
+
+// Sleep with optional random jitter
+function sleep(ms, jitter = 0) {
+  return new Promise(r => setTimeout(r, ms + Math.floor(Math.random() * jitter)));
+}
+
+// Simulate human typing before sending: triggers the typing indicator,
+// then waits a time proportional to message length (like a real user would).
+async function simulateTyping(channel, content) {
+  try {
+    await channel.sendTyping();
+  } catch {}
+  // ~55ms per character, minimum 800ms, maximum 4500ms, plus 150–500ms jitter
+  const base = Math.min(Math.max(content.length * 55, 800), 4500);
+  await sleep(base, 350);
+}
+
+// Per-channel cooldown: enforce minimum gap between sends to the same channel
+const lastSendTime = new Map();
+const MIN_SEND_GAP_MS = 1800;
+
+async function enforceSendCooldown(channelId) {
+  const now = Date.now();
+  const last = lastSendTime.get(channelId) || 0;
+  const gap = now - last;
+  if (gap < MIN_SEND_GAP_MS) {
+    await sleep(MIN_SEND_GAP_MS - gap, 300);
+  }
+  lastSendTime.set(channelId, Date.now());
+}
+
+// Small random read delay — prevents perfectly-timed API reads
+function readDelay() {
+  return sleep(200, 500);
+}
+
+// ---
+
 function getClient() {
   return discordClient;
 }
@@ -42,7 +81,19 @@ async function connectClient(token) {
   }
   clientReady = false;
   voiceState = { connection: null, channelId: null, channelName: null, playing: false, lastTempFile: null };
-  discordClient = new Client({ checkUpdate: false });
+
+  discordClient = new Client({
+    checkUpdate: false,
+    // Override presence: afk:true is the library default and looks suspicious
+    presence: {
+      status: 'online',
+      since: null,
+      afk: false,
+      activities: [],
+    },
+    // ws/http defaults from Options.js already spoof Discord Client on Windows —
+    // we leave those intact and only override the afk flag above
+  });
 
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
@@ -52,7 +103,6 @@ async function connectClient(token) {
     discordClient.once('ready', () => {
       clearTimeout(timeout);
       clientReady = true;
-      console.log(`Logged in as ${discordClient.user.tag}`);
       resolve(discordClient);
     });
 
@@ -189,6 +239,9 @@ app.get('/api/channels/:channelId/messages', async (req, res) => {
   const client = getClient();
   if (!client || !clientReady) return res.status(401).json({ error: 'Not connected' });
   try {
+    // Small random delay — reads don't happen at machine speed
+    await readDelay();
+
     const channel = client.channels.cache.get(req.params.channelId)
       || await client.channels.fetch(req.params.channelId).catch(() => null);
     if (!channel) return res.status(404).json({ error: 'Channel not found' });
@@ -220,6 +273,13 @@ app.post('/api/channels/:channelId/send', async (req, res) => {
     const channel = client.channels.cache.get(req.params.channelId)
       || await client.channels.fetch(req.params.channelId).catch(() => null);
     if (!channel) return res.status(404).json({ error: 'Channel not found' });
+
+    // Enforce minimum gap between sends to this channel
+    await enforceSendCooldown(req.params.channelId);
+
+    // Show typing indicator and wait proportional to message length
+    await simulateTyping(channel, content);
+
     const sent = await channel.send(content);
     res.json({ success: true, messageId: sent.id, content: sent.content, timestamp: sent.createdTimestamp });
   } catch (err) {
@@ -281,7 +341,9 @@ app.post('/api/voice/join', async (req, res) => {
       || await client.channels.fetch(channelId).catch(() => null);
     if (!channel) return res.status(404).json({ error: 'Voice channel not found' });
 
-    const connection = await client.voice.joinChannel(channel, { selfDeaf: false, selfMute: false });
+    // selfDeaf: true — natural behaviour, most users join deafened
+    // selfMute: false — we need to be unmuted to play audio
+    const connection = await client.voice.joinChannel(channel, { selfDeaf: true, selfMute: false });
 
     connection.on('disconnect', () => {
       if (voiceState.channelId === channelId) {
